@@ -12,29 +12,64 @@ module main(
     input rst
     );
     
-    reg signed [7:0] image [0:16384];
-    reg signed [7:0] test [0:16384];
-    reg signed [15:0] con2 [0:15875];
-    reg signed [15:0] pool [0:7937];
-    
+    reg signed [3:0] image [0:16383];
+    reg signed [3:0] test [0:16383];
+    reg signed [7:0] con2 [0:15874];
+    reg signed [7:0] pool [0:7936];
+
     //Read Input Images Into ROMS    
-    initial begin
-        $readmemb("C:/Users/halok/Desktop/School/Grad VLSI/jordan1.txt", image, 0, 16384);
-        $readmemb("C:/Users/halok/Desktop/School/Grad VLSI/jordan1.txt", test, 0, 16384);
-    end
+   /*initial begin    
+        $readmemb("C:/Users/halok/Desktop/School/Grad VLSI/jordan1.txt", image, 0, 16383);
+        $readmemb("C:/Users/halok/Desktop/School/Grad VLSI/jordan1.txt", test, 0, 16383);
+    end */
+   
+    //BRAM Start
+    wire [13:0] bram_addr;
+    wire [3:0] bram_in;
+    wire [3:0] bram_out_image;
+    wire [3:0] bram_out_test;
+    wire [0:0] bram_wea = 0;
+    reg bram_enable;
+    reg [13:0] bram_counter;
     
+    initial 
+        begin
+            bram_counter = 0;
+            bram_enable = 1;
+        end
+    
+    blk_mem_gen_0 Image(clk,bram_enable,bram_wea,bram_addr,bram_in,bram_out_image);
+    blk_mem_gen_1 Test(clk,bram_enable,bram_wea,bram_addr,bram_in,bram_out_test);
+    
+    assign bram_addr = bram_counter;
+    
+    always@(posedge clk)
+        begin
+            if(bram_enable)
+                begin
+                    image[bram_counter] <= bram_out_image;
+                    test[bram_counter] <= bram_out_test;
+                    bram_counter = bram_counter + 1'b1;
+                    if(bram_addr == 16383)
+                        begin
+                            bram_enable <= 0;
+                        end
+                end
+        end
+    //BRAM End
+        
     //Convolution Stage 1 Image//////////////////////////////////////////////////////////////////////////
     reg image_enable;
-    wire [7:0] con1_in1;
-    wire [7:0] con1_in2;
-    wire [7:0] con1_in3;
-    wire [7:0] con1_in4;
-    wire [7:0] con1_in5;
-    wire [7:0] con1_in6;
-    wire [7:0] con1_in7;
-    wire [7:0] con1_in8;
-    wire [7:0] con1_in9;
-    wire signed [7:0] con1_final;
+    wire [3:0] con1_in1;
+    wire [3:0] con1_in2;
+    wire [3:0] con1_in3;
+    wire [3:0] con1_in4;
+    wire [3:0] con1_in5;
+    wire [3:0] con1_in6;
+    wire [3:0] con1_in7;
+    wire [3:0] con1_in8;
+    wire [3:0] con1_in9;
+    wire signed [3:0] con1_final;
     wire finished_con1;
     
     reg [15:0] img_in1_addr;
@@ -51,18 +86,14 @@ module main(
     
     reg[15:0] img_counter = 16'b0000_0000_0000_0001;
     
-    reg img_stop = 1'b1;
-
     initial 
         begin
             img_in1_addr <= 16'b0000_0000_0000_0000;
             img_in2_addr <= 16'b0000_0000_0000_0001;
             img_in3_addr <= 16'b0000_0000_0000_0010;
-            
             img_in4_addr <= 16'b0000_0000_1000_0000;
             img_in5_addr <= 16'b0000_0000_1000_0001;
             img_in6_addr <= 16'b0000_0000_1000_0010;
-            
             img_in7_addr <= 16'b0000_0001_0000_0000;
             img_in8_addr <= 16'b0000_0001_0000_0001;
             img_in9_addr <= 16'b0000_0001_0000_0010;
@@ -87,7 +118,9 @@ module main(
     //Block for Generating Address and Writing Con1 Outputs to ROM  
     always @(posedge clk)
         begin
-        if(img_stop)
+        if(bram_enable == 0)
+        begin
+        if(image_enable)
         begin
             if(rst)
                 begin
@@ -101,13 +134,17 @@ module main(
                     img_in8_addr <= 16'b0000_0001_0000_0001;
                     img_in9_addr <= 16'b0000_0001_0000_0010;                
                 end
+             if(img_addr == 0)
+                begin
+                    image[img_addr] = con1_final;
+                end
              if(finished_con1)
                 begin
                     image[img_addr] = con1_final;
                     img_addr = img_addr + 1'b1;
                     if(img_in9_addr == 16383)
                         begin
-                            img_stop = 0;
+                            image_enable = 0;
                         end
                     img_counter = img_counter + 1;
                     if(img_counter == 127)
@@ -138,21 +175,22 @@ module main(
                 end
         end
         end
+        end
 
 //Convolution Stage 1 Image END//////////////////////////////////////////////////////////////////////////
 
 //Convolution Stage 1 Test Pattern//////////////////////////////////////////////////////////////////////
     reg test_enable; 
-    wire [7:0] test_in1;
-    wire [7:0] test_in2;
-    wire [7:0] test_in3;
-    wire [7:0] test_in4;
-    wire [7:0] test_in5;
-    wire [7:0] test_in6;
-    wire [7:0] test_in7;
-    wire [7:0] test_in8;
-    wire [7:0] test_in9;
-    wire signed [7:0] test_final;
+    wire [3:0] test_in1;
+    wire [3:0] test_in2;
+    wire [3:0] test_in3;
+    wire [3:0] test_in4;
+    wire [3:0] test_in5;
+    wire [3:0] test_in6;
+    wire [3:0] test_in7;
+    wire [3:0] test_in8;
+    wire [3:0] test_in9;
+    wire signed [3:0] test_final;
     wire finished_test;
     
     reg [15:0] test_in1_addr;
@@ -168,8 +206,6 @@ module main(
     reg [15:0] test_addr = 0;
     
     reg [15:0] test_counter = 16'b0000_0000_0000_0001;
-    
-    reg test_stop = 1'b1;
 
     initial 
         begin
@@ -205,7 +241,9 @@ module main(
 //Block for Generating Address and Writing Con1 Outputs to ROM  
     always @(posedge clk)
         begin
-        if(test_stop)
+        if(bram_enable == 0)
+        begin
+        if(test_enable)
         begin
             if(rst)
                 begin
@@ -223,9 +261,9 @@ module main(
                 begin
                     test[test_addr] = test_final;
                     test_addr = test_addr + 1'b1;
-                    if(test_in9_addr == 16386)
+                    if(test_in9_addr == 16383)
                         begin
-                            test_stop = 0;
+                            test_enable = 0;
                         end                    
                     test_counter = test_counter + 1;
                     if(test_counter == 127)
@@ -256,6 +294,7 @@ module main(
                 end
         end
         end
+        end
 
 //Convolution Stage 1 Test Pattern END//////////////////////////////////////////////////////////////////////////
 
@@ -265,25 +304,25 @@ module main(
     reg [15:0] con2_counter = 16'b0000_0000_0000_0001;
     reg [15:0] con2_addr = 0;
     wire finished_con2;
-    wire signed [7:0] con2_img_in1;
-    wire signed [7:0] con2_img_in2;
-    wire signed [7:0] con2_img_in3;
-    wire signed [7:0] con2_img_in4;
-    wire signed [7:0] con2_img_in5;
-    wire signed [7:0] con2_img_in6;
-    wire signed [7:0] con2_img_in7;
-    wire signed [7:0] con2_img_in8;
-    wire signed [7:0] con2_img_in9;
-    wire signed [7:0] con2_test_in1;
-    wire signed [7:0] con2_test_in2;
-    wire signed [7:0] con2_test_in3;
-    wire signed [7:0] con2_test_in4;
-    wire signed [7:0] con2_test_in5;
-    wire signed [7:0] con2_test_in6;
-    wire signed [7:0] con2_test_in7;
-    wire signed [7:0] con2_test_in8;
-    wire signed [7:0] con2_test_in9;
-    wire signed [15:0] con2_final;
+    wire signed [3:0] con2_img_in1;
+    wire signed [3:0] con2_img_in2;
+    wire signed [3:0] con2_img_in3;
+    wire signed [3:0] con2_img_in4;
+    wire signed [3:0] con2_img_in5;
+    wire signed [3:0] con2_img_in6;
+    wire signed [3:0] con2_img_in7;
+    wire signed [3:0] con2_img_in8;
+    wire signed [3:0] con2_img_in9;
+    wire signed [3:0] con2_test_in1;
+    wire signed [3:0] con2_test_in2;
+    wire signed [3:0] con2_test_in3;
+    wire signed [3:0] con2_test_in4;
+    wire signed [3:0] con2_test_in5;
+    wire signed [3:0] con2_test_in6;
+    wire signed [3:0] con2_test_in7;
+    wire signed [3:0] con2_test_in8;
+    wire signed [3:0] con2_test_in9;
+    wire signed [7:0] con2_final;
 
     reg [15:0] con2_in1_addr;
     reg [15:0] con2_in2_addr;
@@ -305,7 +344,6 @@ module main(
     reg [15:0] con2_in17_addr;
     reg [15:0] con2_in18_addr;
     
-    reg con2_stop = 1'b1;
     
     initial 
         begin
@@ -363,7 +401,9 @@ module main(
     
     always@(posedge clk)   
         begin
-        if(con2_stop)
+        if((image_enable == 0) && (test_enable == 0))
+        begin
+        if(con2_enable)
         begin
             if(rst)
                 begin
@@ -390,9 +430,9 @@ module main(
                 begin
                     con2[con2_addr] = con2_final;
                     con2_addr = con2_addr + 1'b1;
-                    if((con2_in9_addr == 16386) && (con2_in18_addr == 16386))
+                    if((con2_in9_addr == 16383) && (con2_in18_addr == 16383))
                         begin
-                            con2_stop <= 0;
+                            con2_enable <= 0;
                         end                    
                     con2_counter = con2_counter + 1;
                     if(con2_counter == 127)
@@ -441,12 +481,11 @@ module main(
              end
         end
         end
+        end
 
 //Convolution Stage 2 END/////////////////////////////////////////////////////////////////////////////////////
 
 //Max Pooling Start////////////////////////////////////////////////////////////////////////////////////
-    
- 
     reg pool_enable;
     wire finished_pool;
     wire signed [15:0] pool_in1;
@@ -483,7 +522,7 @@ module main(
     
     always @(posedge clk)
         begin
-        if(con2_stop == 0)
+        if(con2_enable == 0)
         begin
         if(pool_stop)
         begin
@@ -498,9 +537,10 @@ module main(
                 begin
                     pool[pool_addr] = pool_final;
                     pool_addr = pool_addr + 1'b1;
-                    if(pool_in4_addr == 7938)
+                    if(pool_in4_addr == 7759)
                         begin
                             pool_stop = 0;
+                            pool_enable = 0;
                         end                    
                     pool_counter = pool_counter + 1;
                     if(pool_counter == 90)
@@ -524,8 +564,32 @@ module main(
         end
 
 //Max Pooling END////////////////////////////////////////////////////////////////////////////////////
-
-//Write Max Pooling Result to File/////////////////////////////////////////////////////////////////////////////////////
-//Writing to File END/////////////////////////////////////////////////////////////////////////////////
+/*
+//Write to File START/////////////////////////////////////////////////////////////////////////////////////
+    integer outfile;
+    reg [15:0] file_counter = 0;
+    initial
+        begin
+            outfile = $fopen("C:/Users/halok/Desktop/School/Grad VLSI/pool.txt","w");
+        end
+    
+    always@(posedge clk)
+        begin
+            if(pool_stop == 0)
+                begin
+                    if(file_counter < 7759)
+                        begin
+                            $fwrite(outfile,"%d\n",pool[file_counter]);
+                            file_counter = file_counter + 1'b1;
+                        end
+                    else
+                        begin
+                            $fclose(outfile);
+                        end
+                end
+        end
+        
+//Write to File End/////////////////////////////////////////////////////////////////////////////////
+*/
 endmodule
 
