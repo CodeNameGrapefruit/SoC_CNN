@@ -30,6 +30,9 @@ After both images have been convoluted with the filter, layer 1 is finished. Con
 
 After layer 2 is complete the maxpooling module is instantiated. The same method is used to move through the ROMs and assign the inputs; however, a 2x2 matrix is used for max pooling rather than a 3x3. Results are written into a 4th ROM.
 
+Update  4/18/2019: Images are initialized in BRAM instead of being read from desktop. Allows for future FPGA implementation
+
+
 Work Left:
 1) Bug and Functionality Fixes
 2) Softmax implementation/Classification?
