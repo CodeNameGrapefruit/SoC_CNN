@@ -20,7 +20,7 @@ The max pooling module takes in 4 inputs and returns the largest value to the ma
 
 Main.v Functionality:
 
-The main function first reads in the two 128x128 images using "$readmemb". Each image's pixel values are stored in a ROM. 
+The main function first reads in the two 128x128 images from BRAM. Each image's pixel values are stored in a ROM. 
 
 Once the images have been loaded into their respective ROMs the convolution module is instantiated. However, convolution can not just be applied to the ROMs. When convolution is done in a CNN it is not preformed on pixels 1, 2, 3, 4, 5, 6, 7, 8, and 9. A matrix like window is passed over the orginal image. So to replicate this effect, convolution must actually be performed on ROM values 0, 1, 2, 128, 129, 130, 256, 257, 258 (Imagine each text file has a giant matrix rather than its actual list). After the first calculation is done a "finished" signal notifies the main that the result can be written and the next set up inputs is required. 
 
