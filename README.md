@@ -34,7 +34,7 @@ FPGA Implementaion:
 
 Nexys 4 DDR Atrix 7 used for implementation. Constraint file included.
 
-Update  4/18/2019: Images are initialized in BRAM instead of being read from desktop. Allows for future FPGA implementation
+Update  4/18/2019: Images are initialized in BRAM instead of being read from desktop. Allows for future FPGA implementation. BRAM created using Vivado IP Catalog and instantiated in Main.v.
 
 
 Work Left:
